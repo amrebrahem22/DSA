@@ -1,0 +1,600 @@
+# Problem Solving Patterns
+1. Frequency Counter pattern
+2. Anagram
+3. Multiple Pointers Pattern
+4.Multiple Pointers count unique
+5. Sliding Window
+6. Divide and Conquer
+
+# 1. Frequency Counter pattern
+- this pattern uses objects or sets to collect values/frequencies of values
+- this can often avoid the need for nested loops or O(N2) operations with arrays/Strings
+#### example: write a function called same() which accepts two arrays, the fucntion should return true if every value in the array has it's corresponding value squared in the second array, the frequency of the values must be the same    
+### concrete Examples:
+  - smae([1, 2, 3], [4, 1, 9]) => true
+  - same([1, 2, 3], [1, 9]) => false
+  - same([1, 2, 1], [4, 4, 1]) => false   
+``` js
+function same(arr1, arr2) {
+    // check if they have the same length
+    if(arr1.length !== arr2.length) {
+        return false;
+    }
+    // iterate throught
+    for(let i =0; i < arr1.length; i++) {
+        // get the squared number in the second array
+        let correctIndex = arr2.indexOf(arr1[i] ** 2);
+        if (correctIndex === -1) {
+            // mean not found
+            return false
+        }
+        // remove it from the array if exist
+        arr2.splice(correctIndex, 1)
+    }
+    return true
+}
+```
+
+#### Result
+```js
+console.log(same([1, 2, 3], [9, 4, 1])); // true
+console.log(same([1, 2], [9, 4, 1])); // false
+console.log(same([1, 3], [4, 1])) // false
+```
+#### Refactor
+```js
+function same(arr1, arr2 ){
+    if(arr1.length !== arr2.length) {
+        return false;
+    }
+    
+    // these objects is to store how many time this number in the array exists
+    // count the frequency
+    let frequencyCounter1 = {};
+    let frequencyCounter2 = {};
+    
+    // count frequency in arr1
+    for (let val of arr1) {
+        frequencyCounter1[val] = (frequencyCounter1[val] || 0) + 1;
+    } 
+
+    // count frequency in arr2
+    for (let val of arr2) {
+        frequencyCounter2[val] = (frequencyCounter2[val] || 0) + 1;
+    } 
+
+    // so if we have => same([1, 2, 2, 3], [9, 4, 4, 1])
+    // frequencyCounter1 will be => { 1: 1, 2: 2, 3: 1 }
+    // frequencyCounter2 will be => { 9: 1, 4: 2, 1: 1 }
+
+    for (let key in frequencyCounter1) {
+        // if the key square in the frequencyCounter2
+        // like the number two in the object 
+        // so we check { 2: 2 } the 2 repeated twice so we expect the 4 to be repeated twice in the second array
+        // like => { 2: 2 } and { 4: 2 }
+        if (!(key ** 2 in frequencyCounter2)) {
+            return false;
+        }
+        
+        // then check if frequencyCounter2[4] which is 2 equal frequencyCounter1[2] which is 2
+        if(frequencyCounter2[key ** 2] !== frequencyCounter1[key]) {
+            return false
+        }
+    }
+    return true;
+}
+
+console.log(same([1, 2, 3], [9, 4, 1])); // true
+console.log(same([1, 2], [9, 4, 1])); // false
+console.log(same([1, 3], [4, 1])) // false
+```
+- now it will be O(N) instaed of O(N2)
+
+# 2. Anagram
+#### Example: 
+- Given two strings, write a function to determine if the second string is an anagram of the first, an anagram is a word, phrase, or name formed by rearraging the letters of another, such as cinema, formed from iceman
+#### 1.Understand
+- take two strings, and compare if each char exist in the second strings 
+#### 2.Examples
+  - validAnagram('', '') => true
+  - validAnagram('car', 'rat') => false
+  - validAnagram('cinema', 'iceman') => true
+#### 3.break it down
+ - get two arguments, two strings
+ - loop through the first and check the frequancy
+ - loop through the second and check the frequancy
+ - compare each letter in the first an dthe second
+#### 4.Implement
+```js
+function validAnagram(str1, str2) {
+    if (str1.length !== str2.length) return false;
+
+    let lookup = {};
+
+    // loop through each char in the first str, and append to lookup
+    for (let i =0; i < str1.length; i++) {
+        let letter = str1[i];
+        lookup[letter] ? lookup[letter] += 1 : lookup[letter] = 1;
+    }
+
+    for (let i =0; i < str2.length; i++) {
+        let letter = str2[i];
+        // check if exist in our look up
+        if (!lookup[letter]) {
+            return false;
+        } else {
+            // if not the decrease it by one till reach to 0;
+            lookup[letter] -= 1;
+        }
+    }
+    return true
+}
+
+console.log(validAnagram('', ''));
+console.log(validAnagram('aaz', 'zza'));
+console.log(validAnagram('car', 'rat'));
+console.log(validAnagram('cinema', 'iceman'));
+console.log(validAnagram('texttwisttime', 'timetwisttext'));
+```
+
+# 3. Multiple Pointers Pattern
+- Creating pointers or values that correspond to an index or position and move towards the begining, end or middle based on a certain condition
+- very efficient for solving  problems with minimal space complexity as well
+### Example:
+- write a function called sumZero which accepts a sorted array of integers, the function should find the first pair where the sum is 0, return an array that includes both values that sum to zero or undefined if a pair does not exist
+### Concrete Examples:
+  - sumZero([-3, -2, -1, 0, 1, 2, 3]) => [-3, 3]
+  - sumZero([-2, 0,, 3]) => undefined
+  - sumZero([1, 2, 3]) => undefined
+
+
+### Naive Solution
+```js
+function sumZero(arr) {
+    for (let i = 0; i < arr.length; i++) {
+        // get the next element for the current index
+        for(let j = i +1; j < arr.length; j++) {
+            if (arr[i] + arr[j] === 0) {
+                return [arr[i], arr[j]];
+            }
+        }
+    }
+}
+
+console.log(sumZero([-3, -2, -1, 0, 1, 2, 3]))
+console.log(sumZero([-2, 0, 1, 3]))
+console.log(sumZero([1, 2, 3]))
+```
+
+- This will be O(N2)
+
+### 5.Refactor
+
+- now i will create two pointers, the first will refere to the first element
+- the second will refere to the last index
+```js
+function sumZero(arr) {
+    let left = 0;
+    let right = arr.length - 1;
+
+    while(left < right) {
+        let sum = arr[left] + arr[right];
+        if (sum === 0) {
+            return [arr[left], arr[right]];
+        } else if (sum > 0) {
+            right--;
+        } else {
+            left++;
+        }
+    }
+}
+```
+
+- will be O(N)
+
+```js
+console.log(sumZero([-4, -3, -2, -1, 0, 1, 2, 3, 10])); // [-3, 3]
+```
+
+# 4.Multiple Pointers count unique
+### Example:
+- implement a function called countUniqueValues, which accepts a sorted array, and counts the unique values in the array, there can be negative numbers in the array but it always be stored.
+### Explore Concrete Examples
+  - countUniqueValues([1, 1, 1, 1, 1, 2]) => 2
+  - countUniqueValues([1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]) => 7
+  - countUniqueValues([]) => 0
+  - countUniqueValues([-2, -1, -1, 0, 1]) => 4
+
+### Explain our loop
+```
+// i will be the first element index
+// j is the second index
+```
+```
+// - first iteration
+//  i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//     j
+```
+```
+// - second iteration
+//     i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//        j
+```
+```
+// - third iteration
+//        i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//           j
+```
+```
+// - fourth iteration
+//           i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//              j
+```
+```
+// - fifth iteration (they are equal) => then ignore it and move to the next
+//           i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//              j
+```
+```
+// - sixth iteration (they are equal) => then ignore it and move to the next
+//           i
+// [1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13]
+//                 j
+```
+```
+// - seventh iteration will assign i to this index and replace with this 
+//              i
+// [1, 2, 3, 4, 7, 4, 7, 7, 12, 12, 13]
+//                    j
+```
+
+```js
+function countUniqueValues(arr) {
+    if (arr.length === 0) return 0;
+    let i = 0;
+
+    // assign j to the second e;ement which is 1
+    for(let j = 1; j < arr.length; j++) {
+      // if they are not equal then will move i to the nest element
+      // and assign the current element to the second element
+      if (arr[i] !== arr[j]) {
+        i++;
+        arr[i] = arr[j];
+      }
+    }
+
+    return i + 1;
+}
+console.log(countUniqueValues([1, 1, 1, 1, 1, 2])) // 2
+console.log(countUniqueValues([-2, -1, -1, 0, 1])) // 4
+console.log(countUniqueValues([])) // 0
+console.log(countUniqueValues([1, 2, 3, 4, 4, 4, 7, 7, 12, 12, 13])) // 7
+```
+
+
+# 5. Sliding Window
+### this pattern involves creating a window which can either be an array or number from one position to another depending on certain condition, the window either increase or closes (and a new window is created)
+- very useful for keeping track of a subset of data in an array/string etc.
+### Example:
+- write a function called maxSubarraySum, which accepts an array of integers and number called n, the function should calculate the maximum sum of n consecutive elements in the array.
+### concrete examples
+  - maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 2) // 10
+  - maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 4) // 17
+  - maxSubarraySum([4, 2, 1, 6], 1) // 6
+  - maxSubarraySum([], 4) // null
+
+#### 1.Understand the problem
+  - function take (array, size) 
+  - should return the maximum count of the size in the array
+    - if the size = 3 => should return the sum of the maxmium three values in the array
+    - if size greater than the array return null
+#### 2.Write concrete examples
+  - console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 2)); // 10
+  - console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 4)); // 17
+  - console.log(maxSubarraySum([4, 2, 1, 6], 1)); // 6
+  - console.log(maxSubarraySum([], 4)); // null
+#### 3.break it down
+  - function take (array, size) 
+  - if the size greater than the array return null
+  - will need the maximum variable will be the minimum value = - Infinite
+  - loop through each element in the array exclude the last elements in the array based on size, because they will be calculated in the nested array
+  - will have variable in the nested loop to store the current sum of the next two values for this index
+  - loop through the next values based on size, and sum them to the nested variable
+  - check if the nested variable in the loop greater than the max variable, if so then assign it to the max
+#### 4.start coding
+```js
+function maxSubarraySum(arr, size) {
+  // if the size greater than the array return null
+  if (size > arr) return null;
+  // will need the maximum variable will be the minimum value = - Infinite
+  let maxSum = -Infinity;
+  // loop through each element in the array exclude the last elements in the array based on size, because they will be calculated in the nested array
+  for (let i = 0; i < arr.length - size + 1; i++) {
+    // will have variable in the nested loop to store the current sum of the next two values for this index
+    let currentSum = 0;
+    // loop through the next values based on size, and sum them to the nested variable
+    for(let j = 0; j < size; j++) {
+      currentSum += arr[i + j];
+    }
+    // check if the nested variable in the loop greater than the max variable, if so then assign it to the max
+    maxSum = Math.max(currentSum, maxSum);
+  }
+
+  return maxSum;
+}
+
+
+// Results
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 2)); // 10
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 4)); // 17
+console.log(maxSubarraySum([4, 2, 1, 6], 1)); // 6
+console.log(maxSubarraySum([], 4)); // null
+```
+
+#### 5. Refactor
+```js
+function maxSubarraySum(arr, size) {
+  // if the size greater than the array return null
+  if (size > arr) return null;
+  // will need the maximum variable will be the sum of the first values based on size
+  let maxSum = 0;
+  let currentSum = 0;
+  // loop through each element in the array to add the first values sum to the max
+  for (let i = 0; i < size; i++) {
+    maxSum += arr[i];
+  }
+
+  // assign the currentSum to the maxSum
+  currentSum = maxSum;
+  // loop through each element in the array exclude the first size elements in the array based on size, because we added the sum of them to currentSum
+  for (let i = size; i < arr.length; i++) {
+    // remove the first element in the previous loop, and add the current, that's how you move the window
+    currentSum = currentSum -  arr[i - size] + arr[i];
+    // check if the nested variable in the loop greater than the max variable, if so then assign it to the max
+    maxSum = Math.max(currentSum, maxSum);
+  }
+
+  return maxSum;
+}
+
+
+// Results
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 2)); // 10
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 4)); // 17
+console.log(maxSubarraySum([4, 2, 1, 6], 1)); // 6
+console.log(maxSubarraySum([], 4)); // null
+```
+
+### ANOTHER WAY
+```js
+function maxSubarraySum(arr, size) {
+  // if te size greater than the array return null
+  if (arr.length < size) return null;
+
+  let currentSum = 0; // will hold the current three elements sum 
+  // will holde the max number, and set it to the minimum value which is -Infinite, because if we have negative numbers
+  let maxSum = -Infinity;
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // add the current element to the currentSum
+    currentSum += arr[i];
+
+    // but if we reach to the maximum size then calculate the maximum
+    if (i >= (size - 1)) {
+      // will return tha maximum
+      maxSum = Math.max(currentSum, maxSum);
+      // then subtract the first element in the main three sum, because i will add the next index
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+
+  return maxSum;
+}
+
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 2));
+console.log(maxSubarraySum([1, 2, 5, 2, 8, 1, 5], 4));
+console.log(maxSubarraySum([4, 2, 1, 6], 1));
+console.log(maxSubarraySum([], 4));
+```
+
+### Explaining
+- lets say we will have this array example, and will get the max three elements
+```js
+console.log(maxSubarraySum([1, 2, 5, 8, 2], 3));
+```
+```js
+function maxSubarraySum(arr, size) {
+  // will pass this check
+  if (arr.length < size) return null;
+
+  let currentSum = 0;
+  let maxSum = -Infinity;
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // add the current element to the currentSum
+    currentSum += arr[i]; // first iteration will be 1
+
+    // false, because i = 0 here, so will go to the next
+    if (i >= (size - 1)) {
+      maxSum = Math.max(currentSum, maxSum);
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+
+  return maxSum;
+}
+```
+
+- Next iteration
+```js
+function maxSubarraySum(arr, size) {
+  // will pass this check
+  if (arr.length < size) return null;
+
+  let currentSum = 1; // will be 1
+  let maxSum = -Infinity;
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // now i = 1
+    currentSum += arr[i]; // first iteration will be 1 + 2 = 3
+
+    // false, because i = 1 here, so will go to the next
+    if (i >= (size - 1)) {
+      maxSum = Math.max(currentSum, maxSum);
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+  return maxSum;
+}
+```
+
+- Next iteration
+
+```js
+function maxSubarraySum(arr, size) {
+  // will pass this check
+  if (arr.length < size) return null;
+
+  let currentSum = 3; // will be 3
+  let maxSum = -Infinity;
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // now i = 2
+    currentSum += arr[i]; // first iteration will be 3 + 5 = 8
+
+    // true, because i = 2 here, so will apply this condition
+    if (i >= (size - 1)) {
+      // and here will check max(8, -Infinite) and the max will be 8
+      maxSum = Math.max(currentSum, maxSum);
+      // subtract the first element in our three elements
+      // arr[2 - (3 - 1)] => will be the first index
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+  return maxSum;
+}
+```
+
+- Next iteration
+
+```js
+function maxSubarraySum(arr, size) {
+  // will pass this check
+  if (arr.length < size) return null;
+
+  let currentSum = 7; // will be 7, because we subtract the first element
+  let maxSum = 8; // will be 8
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // now i = 3, now after we subtract the previous element, we add the next element
+    currentSum += arr[i]; // first iteration will be 7 + 8 = 15
+
+    // true, because i = 3 here, so will apply this condition
+    if (i >= (size - 1)) {
+      // and here will check max(15, 8) and the max will be 15
+      maxSum = Math.max(currentSum, maxSum);
+      // subtract the first element in our three elements
+      // arr[3 - (3 - 1)] => will be the second index
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+  return maxSum;
+}
+```
+
+- Next iteration
+
+```js
+function maxSubarraySum(arr, size) {
+  // will pass this check
+  if (arr.length < size) return null;
+
+  let currentSum = 14; // will be 15 - 2 = 14, because we subtract the first element
+  let maxSum = 15; // will be 15
+
+  // loop through each element
+  for(let i = 0; i < arr.length; i ++) {
+    // now i = 4, now after we subtract the previous element, we add the next element
+    currentSum += arr[i]; // first iteration will be 14 + 2 = 15
+
+    // true, because i = 4 here, so will apply this condition
+    if (i >= (size - 1)) {
+      // and here will check max(15, 15) and the max will be 15
+      maxSum = Math.max(currentSum, maxSum);
+      // subtract the first element in our three elements
+      // arr[4 - (3 - 1)] => will be the third index
+      currentSum -= arr[i - (size - 1)];
+    }
+  }
+  return maxSum;
+}
+```
+
+### and will return 15
+
+
+# 6. Divide and Conquer
+- this pattern involves dividing a data set into smaller chuncks and then repeating a process with a subset.
+- this pattern can termendously decrease time complexity
+
+### Example:
+- given a sorted array of integers, write a function called search, that accepts a value and returns the index where the value passed to the function is located, if the value is not found, return -1
+```js
+// Result Examples 
+// search([1, 2, 3, 4, 5, 6], 4) // 3
+// search([1, 2, 3, 4, 5, 6], 6) // 5
+// search([1, 2, 3, 4, 5, 6], 11) // -1
+```
+```js
+function search(arr, num) {
+  for (let i =0; i < arr.length; i++) {
+    if (arr[i] === num) return i;
+  }
+  return -1;
+}
+
+
+console.log(search([1, 2, 3, 4, 5, 6], 4)) // 3
+console.log(search([1, 2, 3, 4, 5, 6], 6)) // 5
+console.log(search([1, 2, 3, 4, 5, 6], 11)) // -1
+```
+
+### Refactor
+- Will use Binary search
+
+```js
+function search(arr, num) {
+  let minIndex = 0; // first index
+  let maxIndex = arr.length - 1; // last index
+
+  // while we didn't reach to the end
+  while (minIndex <= maxIndex) {
+    // get the middle element
+    let middle = Math.floor((minIndex + maxIndex) / 2);
+
+    if (arr[middle] < num) { // mean we have to grow with the min
+      minIndex = middle + 1;
+    } else if (arr[middle] > num) { // reduce the max
+      maxIndex = middle - 1;
+    } else { // mean it equal
+      return middle;
+    }
+  }
+  return -1;
+}
+
+
+console.log(search([1, 2, 3, 4, 5, 6], 4)) // 3
+console.log(search([1, 2, 3, 4, 5, 6], 6)) // 5
+console.log(search([1, 2, 3, 4, 5, 6], 11)) // -1
+```
